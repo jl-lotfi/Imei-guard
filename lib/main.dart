@@ -1138,6 +1138,189 @@ class _DeviceCard extends StatelessWidget {
   }
 }
 
+// ===== about.dart =====
+// عدّل هذه القيم لتغيير ما يظهر في شاشة «حول التطبيق».
+// اترك البريد فارغاً ('') لإخفاء سطره.
+const _aboutName = 'جلاصي لطفي';
+const _aboutPhone = '+216 58 025 403';
+const _aboutEmail = '';
+
+/// يرسم علم فلسطين أو تونس بالكود (بلا ملفات صور).
+class _FlagPainter extends CustomPainter {
+  const _FlagPainter(this.kind);
+  final String kind;
+
+  static const _starPoints = <Offset>[
+    Offset(48.2, 23.4),
+    Offset(49.8, 27.8),
+    Offset(54.5, 28.0),
+    Offset(50.8, 30.8),
+    Offset(52.1, 35.3),
+    Offset(48.2, 32.7),
+    Offset(44.3, 35.3),
+    Offset(45.6, 30.8),
+    Offset(41.9, 28.0),
+    Offset(46.6, 27.8),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 90, size.height / 60);
+    Paint p(int argb) => Paint()..color = Color(argb);
+
+    if (kind == 'ps') {
+      canvas.drawRect(const Rect.fromLTWH(0, 0, 90, 20), p(0xFF000000));
+      canvas.drawRect(const Rect.fromLTWH(0, 20, 90, 20), p(0xFFFFFFFF));
+      canvas.drawRect(const Rect.fromLTWH(0, 40, 90, 20), p(0xFF007A3D));
+      final tri = Path()
+        ..moveTo(0, 0)
+        ..lineTo(36, 30)
+        ..lineTo(0, 60)
+        ..close();
+      canvas.drawPath(tri, p(0xFFCE1126));
+    } else {
+      canvas.drawRect(const Rect.fromLTWH(0, 0, 90, 60), p(0xFFE70013));
+      canvas.drawCircle(const Offset(45, 30), 16, p(0xFFFFFFFF));
+      canvas.drawCircle(const Offset(42.6, 30), 12.2, p(0xFFE70013));
+      canvas.drawCircle(const Offset(45.8, 30), 9.8, p(0xFFFFFFFF));
+      final star = Path()..moveTo(_starPoints[0].dx, _starPoints[0].dy);
+      for (final o in _starPoints.skip(1)) {
+        star.lineTo(o.dx, o.dy);
+      }
+      star.close();
+      canvas.drawPath(star, p(0xFFE70013));
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _FlagPainter old) => old.kind != kind;
+}
+
+class _Flag extends StatelessWidget {
+  const _Flag({required this.kind, required this.label});
+  final String kind;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: cs.outlineVariant),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: CustomPaint(
+              size: const Size(72, 48),
+              painter: _FlagPainter(kind),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+}
+
+void showAbout(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (ctx) {
+      final cs = Theme.of(ctx).colorScheme;
+
+      Widget row(IconData icon, String label, String value, {bool ltr = false}) {
+        return Column(
+          children: [
+            Divider(height: 1, color: cs.outlineVariant),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                children: [
+                  Icon(icon, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                              fontSize: 12, color: cs.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 2),
+                        Directionality(
+                          textDirection:
+                              ltr ? TextDirection.ltr : TextDirection.rtl,
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: SelectableText(
+                              value,
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }
+
+      return AlertDialog(
+        title: const Text('حول التطبيق'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _Flag(kind: 'ps', label: 'فلسطين'),
+                  SizedBox(width: 24),
+                  _Flag(kind: 'tn', label: 'تونس'),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'حارس IMEI: تطبيق للتحقق من الهواتف المسروقة والإبلاغ عنها.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: cs.onSurfaceVariant, height: 1.6),
+              ),
+              const SizedBox(height: 14),
+              row(Icons.person_outline, 'المطوّر', _aboutName),
+              row(Icons.phone_outlined, 'الهاتف', _aboutPhone, ltr: true),
+              if (_aboutEmail.isNotEmpty)
+                row(Icons.email_outlined, 'البريد الإلكتروني', _aboutEmail,
+                    ltr: true),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 // ===== main.dart =====
 const _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 const _supabaseKey = String.fromEnvironment('SUPABASE_ANON_KEY');
@@ -1238,6 +1421,11 @@ class _ShellState extends State<Shell> {
         title: const Text('حارس IMEI', style: TextStyle(fontWeight: FontWeight.w700)),
         leading: Icon(Icons.shield_outlined, color: cs.primary),
         actions: [
+          IconButton(
+            tooltip: 'حول التطبيق',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showAbout(context),
+          ),
           Padding(
             padding: const EdgeInsetsDirectional.only(end: 12),
             child: Chip(
